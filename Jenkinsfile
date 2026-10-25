@@ -42,51 +42,66 @@ pipeline {
                 } 
             }
         }
-        stage('Docker Build') {
-            steps {
-                script {
-                 // in this block we get aws authentication
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                     sh """
-                        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${acc_id} .dkr.ecr.us-east-1.amazonaws.com
-                        docker build -t ${acc_id}.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion} .
-                        docker push -t ${acc_id}.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion}
-                    """
-                }   
-            }
-        }
-        stage('Deploy') {
-            when {
-                // Evaluates the boolean parameter directly
-                expression { "${params.DEPLOY}" == "true" }
-            }
-            /* input {
-                message "Should we continue?"
-                ok "Yes, we should."
-                submitter "alice,bob"
-                parameters {
-                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-                }
-            } */
-            steps {
-                script {
-                    sh """
-                        echo "Deploying"
-                    """
-                }
+        
+stage('Docker Build') {
+    steps {
+        script {
+            // AWS authentication
+            withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+                sh """
+                    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${acc_id}.dkr.ecr.us-east-1.amazonaws.com
+
+                    docker build -t ${acc_id}.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion} .
+
+                    docker push ${acc_id}.dkr.ecr.us-east-1.amazonaws.com/${project}/${component}:${appVersion}
+                """
             }
         }
     }
+}
 
-    post { 
-        always { 
-            echo 'I will always say Hello again!'
+
+stage('Deploy') {
+    when {
+        expression {
+            params.DEPLOY == true || params.DEPLOY == 'true'
         }
-        success { 
-            echo 'I will run when success'
+    }
+
+    /*
+    input {
+        message "Should we continue?"
+        ok "Yes, we should."
+        submitter "alice,bob"
+        parameters {
+            string(
+                name: 'PERSON',
+                defaultValue: 'Mr Jenkins',
+                description: 'Who should I say hello to?'
+            )
         }
-        failure { 
-            echo 'I will Run when it is failed'
+    }
+    */
+
+    steps {
+        script {
+            sh '''
+                echo "Deploying"
+            '''
         }
+    }
+}
+
+
+
+post {
+    always {
+        echo 'I will always say Hello again!'
+    }
+    success {
+        echo 'I will run when success'
+    }
+    failure {
+        echo 'I will run when it fails'
     }
 }
