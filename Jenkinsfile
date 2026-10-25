@@ -45,7 +45,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+                    withAWS(credentials: 'aws-crede', region: 'us-east-1') {
                         sh """
                             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${acc_id}.dkr.ecr.us-east-1.amazonaws.com
 
